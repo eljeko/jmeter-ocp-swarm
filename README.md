@@ -113,6 +113,10 @@ NAME                               READY     STATUS      RESTARTS   AGE
 jmeter-controller-job-1234-gznfw   0/1       Completed   0          1h
 ```
 
+Ypu can simply grab the status with this command:
+
+```oc get pods -l job-name=jmeter-controller-job-1234  -o=custom-columns=STATUS:.status.containerStatuses[0].state.terminated.reason --no-headers=true```
+
 ### Job from template
 
 oc process -f bash-job-template.yaml -p JOB_SUFFIX=aNewJob -o yaml --local=true
