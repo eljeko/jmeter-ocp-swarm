@@ -1,0 +1,10 @@
+#!/bin/bash -e
+#
+# S2I run script for the 'jmeter-server-slave' image.
+# The run script executes the server that runs your application.
+#
+# For more information see the documentation:
+#	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
+#
+
+sh /home/jmeter/bin/jmeter -n -t $PROJECT_PATH -Dserver.rmi.ssl.disable=true -R$JMETER_SLAVES

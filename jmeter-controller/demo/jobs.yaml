@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jmeter-controller-job
+spec:
+  parallelism: 1    
+  completions: 1    
+  template:         
+    metadata:
+      name: jmeter-controller-job
+    spec:
+      containers: 
+      - env:
+        - name: PROJECT_PATH
+          value: /tmp/jmeter.jmx
+        - name: JMETER_SLAVES
+          value: 172.17.0.7
+        image: 172.30.1.1:5000/jmeter/jmeter-controller
+        name: jmeter-controller-job
+        volumeMounts:
+        - name: config-volume
+          mountPath: /tmp                  
+      volumes:
+        - name: config-volume
+          configMap:
+            name: jmeter-test        
+      restartPolicy: Never
