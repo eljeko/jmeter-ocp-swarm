@@ -1,21 +1,20 @@
-# Start jmeter in remote mode
+#Jmeter on OCP
 
+This project is a collection of samples file to run jmeter in remote/controller mode.
 
-Step 1: Start the servers
-
-To run JMeter in remote node, start the JMeter server component on all machines you wish to run on by running the JMETER_HOME/bin/jmeter-server (unix) or JMETER_HOME/bin/jmeter-server.bat (windows) script.
-
-We can start the server and disable the SSL
-
-```JMETER_HOME/bin/jmeter-server.bat -Dserver.rmi.ssl.disable=true```
+You can read the official jmeter [documentation](http://jmeter.apache.org/usermanual/remote-test.html) to run jemter in remote/controller mode.
 
 ## Create server slave image
 
-oc new-build --strategy docker --binary --name jmeter-server-remote
-
 Point to dir 
 
-[PATH-TO]/jmeter-swarm/jmeter-server-remote/jmeter-slave-image
+```[PATH-TO]/jmeter-ocp-swarm/jmeter-server-remote/jmeter-slave-image```
+
+Create the new build:
+
+```oc new-build --strategy docker --binary --name jmeter-server-remote```
+
+Build our image:
 
 ```oc start-build jmeter-server-remote --from-dir . --follow```
 
@@ -25,23 +24,21 @@ Create at least one running pod:
 
 The above command will start a new pod from the previously create build 
 
-## Create jmeter controller image
+*NOTE*: all the instances are started with ```-Dserver.rmi.ssl.disable=true``` to turn off SSL.
 
-oc new-build --strategy docker --binary  --name jmeter-controller
+## Create jmeter controller image
 
 Point to dir 
 
-[PATH-TO]/jmeter-swarm/meter-controller/jmeter-controller-image
+```[PATH-TO]/jmeter-swarm/meter-controller/jmeter-controller-image```
+
+Create the new build:
+
+```oc new-build --strategy docker --binary  --name jmeter-controller```
+
+Build our image:
 
 ```oc start-build jmeter-controller --from-dir . --follow```
-
-NOTE TBD DELETED:
-
-Create at least one running pod:
-
-```oc new-app jmeter-controller```
-
-The above command will start a new pod from the previously create build 
 
 ## Running controller as job
 
