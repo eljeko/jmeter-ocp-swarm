@@ -22,7 +22,7 @@ objects:
             value: ${REMOTE_SERVERS_LIST}
           - name: TEST_PLAN_URL
             value: ${TEST_PLAN_URL}
-          image: docker-registry.default.svc:5000/jmeter-test/jmeter-controller
+          image: docker-registry.default.svc:5000/jmeter-v2/jmeter-controller
           name: jmeter-controller-job
         restartPolicy: Never
 parameters:
