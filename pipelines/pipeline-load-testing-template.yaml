@@ -20,7 +20,7 @@ objects:
           node ("maven") {
             stage ("Load test") {
 
-              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
+              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template-local.yaml > jmeter-job-template.yaml"
 
               env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
 
