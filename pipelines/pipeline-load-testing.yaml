@@ -22,7 +22,8 @@ spec:
             ).trim()
 
             env.SERVERS_LIST = SERVERS_LIST_CALL
+            env.JMX_FILE_URL = "https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx"
 
-            sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=cool-app-jmeter.jmx -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
+            sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
           }
         }
