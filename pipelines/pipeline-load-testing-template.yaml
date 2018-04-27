@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: load-test-pipeline-temlate
+  annotations:
+    description: "Template fot jmeter pipelien stages"  
+    tags: "cicd,jnekins,pipeline,jmeter"
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: load-test-pipeline
+    labels:
+      name: load-test-pipeline
+  spec:
+    strategy:
+      type: JenkinsPipeline
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          node ("maven") {
+            stage ("Load test") {
+
+              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
+
+              env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
+
+              SERVERS_LIST_CALL = sh (
+                script: "oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
+                returnStdout: true
+              ).trim()
+
+              env.SERVERS_LIST = SERVERS_LIST_CALL
+              env.JMX_FILE_URL = "${JMX_FILE_URL}"
+              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
+
+              while ({
+
+                JOB_STATUS = sh (
+                  script: "oc get pods -l job-name=jmeter-controller-job-$TIME_STAMP  -o=custom-columns=STATUS:.status.containerStatuses[0].state.terminated.reason --no-headers=true",
+                  returnStdout: true
+                ).trim()                        
+                
+                echo "Job [jmeter-controller-job-" + TIME_STAMP + "] status [" + JOB_STATUS + "]"
+                
+                sleep 1 
+                
+                JOB_STATUS!="Completed"
+              }()) continue
+              
+              POD_JOB_NAME = sh (
+                script: "oc get pods -l job-name=jmeter-controller-job-$TIME_STAMP  -o=custom-columns=POD:.metadata.name --no-headers=true",
+                returnStdout: true
+              ).trim()
+
+              env.POD_JOB_NAME = POD_JOB_NAME
+              
+              //A slee to wait for pod to flush all logs.
+              sleep 5
+
+              JOB_RESULT = sh (
+                script: "oc logs $POD_JOB_NAME|grep summary",
+                returnStdout: true
+              ).trim()                                    
+              
+              echo JOB_RESULT              
+            }
+          }
+parameters:
+- description: Url of the jmeter jmx project    
+  name: JMX_FILE_URL
+  value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx
+  required: true
+labels:
+  redis: master
