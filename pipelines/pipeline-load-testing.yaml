@@ -9,20 +9,20 @@ spec:
     type: JenkinsPipeline
     jenkinsPipelineStrategy:
       jenkinsfile: |-
-        node ("maven") {                        
-          stage ("Load test") {                  
-            
+        node ("maven") {
+          stage ("Load test") {
+
             sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
-            
+
             env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
-            
+
             SERVERS_LIST_CALL = sh (
               script: "oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
               returnStdout: true
             ).trim()
-            
+
             env.SERVERS_LIST = SERVERS_LIST_CALL
 
-            sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_NAME=cool-app-jmeter.jmx -p TEST_CONFIG_MAP_NAME=jmeter-test -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
-          }         
+            sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=cool-app-jmeter.jmx -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
+          }
         }

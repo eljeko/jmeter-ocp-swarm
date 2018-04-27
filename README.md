@@ -58,7 +58,7 @@ The above command will start a new pod from the previously create build
 
 Go to dir
 
-```[PATH-TO]/jmeter-swarm/meter-controller/jmeter-controller-image```
+```[PATH-TO]/jmeter-ocp-swarm/jmeter-controller/jmeter-controller-image```
 
 Create the new build:
 
@@ -89,8 +89,7 @@ TODO: change the static name jmeter-test to jmeter-test-${APPLICATION-NAME} in o
 ## Running jmeter controller as job
 Create a job yaml file from the template, the configurables parameters are:
 
-* TEST_PLAN_NAME the name of the jmeter file
-* TEST_CONFIG_MAP_NAME the name of the config map where the jmeter test is stored
+* TEST_PLAN_URL the url of the jmx where the jmeter test is stored
 * REMOTE_SERVERS_LIST the ips of the pods running as jmeter remote servers
 * TIMESTAMP user generated timestamp to create unique jobs
 
@@ -100,7 +99,7 @@ Before processing the template we get the ip of remote jmeter server running
 
 eg (note that the server list must be changed according to your environment):
 
-```oc process -f jmeter-job-template.yaml -p TIMESTAMP=1234 -p TEST_PLAN_NAME=cool-app-jmeter.jmx -p TEST_CONFIG_MAP_NAME=jmeter-test -p REMOTE_SERVERS_LIST=172.17.0.2,172.17.0.3 -o yaml --local=true```
+```oc process -f jmeter-job-template.yaml -p TIMESTAMP=1234 -p TEST_PLAN_URL=http://example.url/jmeter-test.jmx -p REMOTE_SERVERS_LIST=172.17.0.2,172.17.0.3 -o yaml --local=true```
 
 You get the yaml processed template.
 
@@ -172,7 +171,6 @@ build the image:
 Create new app for the image built
 
 ```oc new-app jmeter-remote```
-
 
 ```jmeter -n -t script.jmx -R server1,server2,serverN```
 

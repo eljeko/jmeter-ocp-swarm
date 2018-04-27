@@ -7,4 +7,5 @@
 #	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
 #
 
-sh /home/jmeter/bin/jmeter -n -t $PROJECT_PATH -Dserver.rmi.ssl.disable=true -R$JMETER_SLAVES
+curl $TEST_PLAN_URL > /home/jmeter/test-jmeter.jmx
+sh /home/jmeter/bin/jmeter -n -t /home/jmeter/test-jmeter.jmx -Dserver.rmi.ssl.disable=true -R$JMETER_SLAVES
