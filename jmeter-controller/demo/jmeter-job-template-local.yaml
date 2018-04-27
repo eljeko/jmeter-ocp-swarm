@@ -22,7 +22,7 @@ objects:
             value: /tmp/${TEST_PLAN_NAME}
           - name: JMETER_SLAVES
             value: ${REMOTE_SERVERS_LIST}
-          image: docker-registry.default.svc:5000/jmeter-test/jmeter-controller
+          image: 172.30.1.1:5000/jmeter/jmeter-controller
           name: jmeter-controller-job
           volumeMounts:
           - name: config-volume
