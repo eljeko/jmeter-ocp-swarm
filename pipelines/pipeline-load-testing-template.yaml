@@ -18,16 +18,54 @@ objects:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
           node ("maven") {
-            stage ("Load test") {
+            def SERVERS_LIST_CALL
+            def SLEEP=5
 
-              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
-
+            stage ("Setup Envirornment") {
               env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
 
+              sh "oc delete all -l job-name=jmeter-controller-job-$TIME_STAMP"
+              sh "oc delete all -l app=${APPLICATION_NAME}-jmeter-slave"
+
+              while ({
+                SLAVE_STATUSES = sh (
+                  script: "oc get pods -l app=${APPLICATION_NAME}-jmeter-slave  -o=custom-columns=Name:.metadata.name --no-headers=true || true",
+                  returnStdout: true
+                ).split()
+
+                println "The length of the array is: " + SLAVE_STATUSES.size()
+                println "The the array is: " + SLAVE_STATUSES
+
+                sleep SLEEP
+
+                SLAVE_STATUSES.size() != 0
+              }()) continue
+
+              sh "oc new-app --name=${APPLICATION_NAME}-jmeter-slave --image-stream=jmeter-server-remote"
+              sh "oc scale dc/${APPLICATION_NAME}-jmeter-slave --replicas=${CONCURRENT_LAUNCHER}"
+
+              while ({
+                SLAVE_STATUSES = sh (
+                  script: "oc get pods -l app=${APPLICATION_NAME}-jmeter-slave  -o=custom-columns=STATUS:.status.phase --no-headers=true || true",
+                  returnStdout: true
+                ).split()
+
+                println "The length of the array is: " + SLAVE_STATUSES.size()
+                println "The the array is: " + SLAVE_STATUSES
+                sleep SLEEP
+
+                SLAVE_STATUSES.count { it.startsWith('Running') } != ${CONCURRENT_LAUNCHER}
+              }()) continue
+
               SERVERS_LIST_CALL = sh (
-                script: "oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
+                script: "oc describe pods -l app=${APPLICATION_NAME}-jmeter-slave|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
                 returnStdout: true
               ).trim()
+            }
+
+            stage ("Executing Load test") {
+
+              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
 
               env.SERVERS_LIST = SERVERS_LIST_CALL
               env.JMX_FILE_URL = "${JMX_FILE_URL}"
@@ -43,11 +81,13 @@ objects:
 
                 echo "Job [jmeter-controller-job-" + TIME_STAMP + "] status [" + JOB_STATUS + "]"
 
-                sleep 1
+                sleep SLEEP
 
                 JOB_STATUS!="Completed"
               }()) continue
+            }
 
+            stage ("Collecting results") {
               POD_JOB_NAME = sh (
                 script: "oc get pods -l job-name=jmeter-controller-job-$TIME_STAMP  -o=custom-columns=POD:.metadata.name --no-headers=true",
                 returnStdout: true
@@ -56,7 +96,7 @@ objects:
               env.POD_JOB_NAME = POD_JOB_NAME
 
               //A slee to wait for pod to flush all logs.
-              sleep 5
+              sleep SLEEP
 
               JOB_RESULT = sh (
                 script: "oc logs $POD_JOB_NAME|grep summary",
@@ -65,11 +105,24 @@ objects:
 
               echo JOB_RESULT
             }
+
+            stage ("Cleaningup Envirornment") {
+                sh "oc delete all -l job-name=jmeter-controller-job-$TIME_STAMP"
+                sh "oc delete all -l app=${APPLICATION_NAME}-jmeter-slave"
+            }
           }
 parameters:
 - description: Url of the jmeter jmx project
   name: JMX_FILE_URL
   value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx
+  required: true
+- description: The application name
+  name: APPLICATION_NAME
+  value: cool-app
+  required: true
+- description: Url of the jmeter jmx project
+  name: CONCURRENT_LAUNCHER
+  value: "2"
   required: true
 labels:
   redis: master
