@@ -1,11 +1,11 @@
 # Jmeter on OCP
 
 This project is a collection of samples file to run jmeter in remote/controller mode.
-You can read the official jmeter [documentation](http://jmeter.apache.org/usermanual/remote-test.html) to run jemter in remote/controller mode.
+You can read the official jmeter [documentation](http://jmeter.apache.org/usermanual/remote-test.html) to run jmeter in remote/controller mode.
 
 The samples use 4 components:
 * Demo web application 'cool-app': Used as performance test target application.
-* Jmeter Slave: Worker image, is used by a controller to delegate performance test execution.
+* Jmeter Server Remote (Slave): Worker image, is used by a controller to delegate performance test execution.
 * Jmeter Controller: Is the standard image to use for controlling a pipeline.
 * Openshift Job: OCP Job use the Jmeter Controller image to lunch a specific test.
 
