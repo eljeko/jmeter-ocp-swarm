@@ -132,6 +132,9 @@ You can simply grab the status with this command:
 
 oc process -f bash-job-template.yaml -p JOB_SUFFIX=aNewJob -o yaml --local=true
 
+## Create the pipeline
+
+```oc process -f pipeline-load-testing-template.yaml  -o yaml --local=true|oc create -f -```
 
 
 
