@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Template
+labels:
+  application: jmeter-controller-job-template
+metadata:
+  name: jmeter-controller-job-template
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: jmeter-controller-job-${TIMESTAMP}
+  spec:
+    parallelism: 1
+    completions: 1
+    template:
+      metadata:
+        name: jmeter-controller-job
+      spec:
+        containers:
+        - env:
+          - name: PROJECT_PATH
+            value: /tmp/${TEST_PLAN_NAME}
+          - name: JMETER_SLAVES
+            value: ${REMOTE_SERVERS_LIST}
+          image: docker-registry.default.svc:5000/jmeter-test/jmeter-controller
+          name: jmeter-controller-job
+          volumeMounts:
+          - name: config-volume
+            mountPath: /tmp
+        volumes:
+          - name: config-volume
+            configMap:
+              name: ${TEST_CONFIG_MAP_NAME}
+        restartPolicy: Never
+parameters:
+- description: Test plan name
+  name: TEST_PLAN_NAME
+  required: true
+  value:
+- description: List of remote jmeter servers
+  name: REMOTE_SERVERS_LIST
+  required: true
+  value:
+- description: Name of the config map where the Jmeter file is stored
+  name: TEST_CONFIG_MAP_NAME
+  required: true
+  value:
+- description: Timestamp for the job
+  name: TIMESTAMP
+  required: true
+  value:
