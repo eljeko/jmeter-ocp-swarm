@@ -1,10 +1,16 @@
 # Jmeter on OCP
 
 This project is a collection of samples file to run jmeter in remote/controller mode.
-
 You can read the official jmeter [documentation](http://jmeter.apache.org/usermanual/remote-test.html) to run jemter in remote/controller mode.
 
-# Create the demo app
+The samples use 4 components:
+* Demo web application 'cool-app': Used as performance test target application.
+* Jmeter Slave: Worker image, is used by a controller to delegate performance test execution.
+* Jmeter Controller: Is the standard image to use for controlling a pipeline.
+* Openshift Job: OCP Job use the Jmeter Controller image to lunch a specific test.
+
+
+## Create the demo app
 
 First you need to build the app, then:
 
@@ -26,9 +32,9 @@ Create the route:
 
 ```oc expose svc/cool-app```
 
-# Create server slave image
+## Create server slave image
 
-Point to dir 
+Point to dir
 
 ```[PATH-TO]/jmeter-ocp-swarm/jmeter-server-remote/jmeter-slave-image```
 
@@ -44,13 +50,13 @@ Create at least one running pod:
 
 ``` oc new-app jmeter-server-remote```
 
-The above command will start a new pod from the previously create build 
+The above command will start a new pod from the previously create build
 
 *NOTE*: all the instances are started with ```-Dserver.rmi.ssl.disable=true``` to turn off SSL.
 
-# Create jmeter controller image
+## Create Jmeter Controller image
 
-Go to dir 
+Go to dir
 
 ```[PATH-TO]/jmeter-swarm/meter-controller/jmeter-controller-image```
 
@@ -67,14 +73,20 @@ Build our image:
 In this example we use a config map to store the jmeter projet to run.
 The config map is mounted by the Jmeter controller job.
 
-Go to dir 
+Go to dir
 
-```[PATH-TO]/jmeter-swarm/meter-controller/demo```
+```[PATH-TO]/jmeter-ocp-swarm/jmeter-controller/demo```
 
+In this folder you'll find two files:
+* cool-app-jmeter.jmx: is the test plan generated from Jmeter tools (http://jmeter.apache.org/usermanual/)
+* jmeter-job-tempalte.yaml: This is a template useful for create the runtime environment for testing.
+
+## Create the specific test configuration
 ```oc create configmap jmeter-test --from-file=cool-app-jmeter.jmx```
 
-## Running jmeter controller as job
+TODO: change the static name jmeter-test to jmeter-test-${APPLICATION-NAME} in order to avoid concurrency conflicts.
 
+## Running jmeter controller as job
 Create a job yaml file from the template, the configurables parameters are:
 
 * TEST_PLAN_NAME the name of the jmeter file
@@ -82,11 +94,11 @@ Create a job yaml file from the template, the configurables parameters are:
 * REMOTE_SERVERS_LIST the ips of the pods running as jmeter remote servers
 * TIMESTAMP user generated timestamp to create unique jobs
 
-Before processing the template we get the ip of remote jmeter server runing
+Before processing the template we get the ip of remote jmeter server running
 
 ```oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print $2'}| tr '\n' ','| sed 's/,$//'```
 
-eg (note that the server list must be changed acconding to your environment):
+eg (note that the server list must be changed according to your environment):
 
 ```oc process -f jmeter-job-template.yaml -p TIMESTAMP=1234 -p TEST_PLAN_NAME=cool-app-jmeter.jmx -p TEST_CONFIG_MAP_NAME=jmeter-test -p REMOTE_SERVERS_LIST=172.17.0.2,172.17.0.3 -o yaml --local=true```
 
@@ -113,7 +125,7 @@ NAME                               READY     STATUS      RESTARTS   AGE
 jmeter-controller-job-1234-gznfw   0/1       Completed   0          1h
 ```
 
-Ypu can simply grab the status with this command:
+You can simply grab the status with this command:
 
 ```oc get pods -l job-name=jmeter-controller-job-1234  -o=custom-columns=STATUS:.status.containerStatuses[0].state.terminated.reason --no-headers=true```
 
@@ -167,4 +179,3 @@ Create new app for the image built
 You can read the official [documentation](http://jmeter.apache.org/usermanual/remote-test.html)
 
 ## Start the controller
-

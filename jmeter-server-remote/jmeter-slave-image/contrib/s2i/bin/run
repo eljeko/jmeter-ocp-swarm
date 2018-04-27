@@ -7,5 +7,5 @@
 #	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
 #
 
-du -hs /home/jmeter/
-sh /home/jmeter/bin/jmeter-server -Dserver.rmi.ssl.disable=true -Dserver.rmi.localport=50000 -Dserver_port=1099
+du -hs /home/jboss/jmeter/
+sh /home/jboss/jmeter/bin/jmeter-server -Dserver.rmi.ssl.disable=true -Dserver.rmi.localport=50000 -Dserver_port=1099
