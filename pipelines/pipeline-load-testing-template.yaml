@@ -18,12 +18,17 @@ objects:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
           node ("maven") {
+
+            jenkinsUser = "${JENKINS_USER}"    // Set username for Jenkins
+            jenkinsPass = "${JENKINS_PWD_TOKEN}"    // Set API token for Jenkins
+
             def SERVERS_LIST_CALL
             def SLEEP=5
 
             stage ("Setup Envirornment") {
               env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
 
+              sh "oc delete all -l application=jmeter-controller-job-template"
               sh "oc delete all -l job-name=jmeter-controller-job-$TIME_STAMP"
               sh "oc delete all -l app=${APPLICATION_NAME}-jmeter-slave"
 
@@ -33,12 +38,12 @@ objects:
                   returnStdout: true
                 ).split()
 
-                println "The length of the array is: " + SLAVE_STATUSES.size()
-                println "The the array is: " + SLAVE_STATUSES
-
                 sleep SLEEP
 
+                println "The length of the array is: " + SLAVE_STATUSES.size()
+                println "The the array is: " + SLAVE_STATUSES
                 SLAVE_STATUSES.size() != 0
+
               }()) continue
 
               sh "oc new-app --name=${APPLICATION_NAME}-jmeter-slave --image-stream=jmeter-server-remote"
@@ -50,11 +55,12 @@ objects:
                   returnStdout: true
                 ).split()
 
+                sleep SLEEP
                 println "The length of the array is: " + SLAVE_STATUSES.size()
                 println "The the array is: " + SLAVE_STATUSES
-                sleep SLEEP
 
                 SLAVE_STATUSES.count { it.startsWith('Running') } != ${CONCURRENT_LAUNCHER}
+
               }()) continue
 
               SERVERS_LIST_CALL = sh (
@@ -69,9 +75,16 @@ objects:
 
               env.SERVERS_LIST = SERVERS_LIST_CALL
               env.JMX_FILE_URL = "${JMX_FILE_URL}"
-              inputURL = env.BUILD_URL + "input/${APPLICATION_NAME}-pipeline/submit"
 
-              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -p JENKINS_PIPELINE_RETURN_URL=${inputURL} -p APPLICATION_NAME=${APPLICATION_NAME} -o yaml --local=true|oc create -f -"
+              sh "env"
+
+              //Currently commented because https://issues.jenkins-ci.org/browse/JENKINS-16225
+              //inputURL = env.BUILD_URL + "input/${APPLICATION_NAME}-pipeline/submit"
+
+              inputURL = "https://jenkins-jmeter-v2.apps.ocp.accenture.nfv/job/jmeter-v2-cool-app-pipeline/1/input/cool-app-pipeline/submit"
+              println "The inputURL: " + inputURL
+
+              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -p JENKINS_PIPELINE_RETURN_URL=${inputURL} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -o yaml --local=true|oc create -f -"
 
               // Block and wait for job to return with results file
               // The input ID is what creates the unique return URL for curling back
@@ -120,6 +133,12 @@ parameters:
 - description: Url of the jmeter jmx project
   name: CONCURRENT_LAUNCHER
   value: "2"
+  required: true
+- description: Jenkins Username for callback
+  name: JENKINS_USER
+  required: true
+- description: Jenkins Password or token for callback
+  name: JENKINS_PWD_TOKEN
   required: true
 labels:
   redis: master

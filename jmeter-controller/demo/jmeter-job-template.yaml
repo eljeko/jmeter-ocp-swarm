@@ -26,6 +26,10 @@ objects:
             value: ${APPLICATION_NAME}
           - name: JENKINS_PIPELINE_RETURN_URL
             value: ${JENKINS_PIPELINE_RETURN_URL}
+          - name: JENKINS_USER
+            value: ${JENKINS_USER}
+          - name: JENKINS_PASS
+            value: ${JENKINS_PASS}
           image: docker-registry.default.svc:5000/jmeter-v2/jmeter-controller
           name: jmeter-controller-job
         restartPolicy: Never
@@ -50,3 +54,9 @@ parameters:
   name: JENKINS_PIPELINE_RETURN_URL
   required: true
   value:
+- description: Jenkins Username for callback
+  name: JENKINS_USER
+  required: true
+- description: Jenkins Password or token for callback
+  name: JENKINS_PASS
+  required: true

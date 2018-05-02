@@ -12,8 +12,9 @@ sh /home/jmeter/bin/jmeter -n -t /home/jmeter/test-jmeter.jmx -l /home/jmeter/te
 
 cat /home/jmeter/test-jmeter.jtl
 
-curl -X POST --user demo:password \
-  --form file0=@results//home/jmeter/test-jmeter.jtl \
+curl -X POST --user $JENKINS_USER:$JENKINS_PASS \
+  --form file0=/home/jmeter/test-jmeter.jtl \
   --form json='{"parameter": [{"name":'\"$APPLICATION_NAME\"', "file":"file0"}]}' \
   --form proceed=Proceed \
+  --insecure \
   $JENKINS_PIPELINE_RETURN_URL
