@@ -9,9 +9,9 @@ objects:
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: load-test-pipeline
+    name: ${APPLICATION_NAME}-pipeline
     labels:
-      name: load-test-pipeline
+      name: ${APPLICATION_NAME}-pipeline
   spec:
     strategy:
       type: JenkinsPipeline
@@ -69,22 +69,19 @@ objects:
 
               env.SERVERS_LIST = SERVERS_LIST_CALL
               env.JMX_FILE_URL = "${JMX_FILE_URL}"
+              inputURL = env.BUILD_URL + "input/${APPLICATION_NAME}-pipeline/submit"
 
-              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -o yaml --local=true|oc create -f -"
+              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -p JENKINS_PIPELINE_RETURN_URL=${inputURL} -p APPLICATION_NAME=${APPLICATION_NAME} -o yaml --local=true|oc create -f -"
 
-              while ({
-
-                JOB_STATUS = sh (
-                  script: "oc get pods -l job-name=jmeter-controller-job-$TIME_STAMP  -o=custom-columns=STATUS:.status.containerStatuses[0].state.terminated.reason --no-headers=true || true",
-                  returnStdout: true
-                ).trim()
-
-                echo "Job [jmeter-controller-job-" + TIME_STAMP + "] status [" + JOB_STATUS + "]"
-
-                sleep SLEEP
-
-                JOB_STATUS!="Completed"
-              }()) continue
+              // Block and wait for job to return with results file
+              // The input ID is what creates the unique return URL for curling back
+              print "Waiting for results from JMeter test job..."
+              def inputFile = input id: "${APPLICATION_NAME}-pipeline",
+                message: 'Waiting for JMeter results...',
+                parameters: [
+                  file(description: 'Performance Test Results',
+                  name: "${APPLICATION_NAME}")  // This must match the name param in runjob.sh
+                  ]
             }
 
             stage ("Collecting results") {

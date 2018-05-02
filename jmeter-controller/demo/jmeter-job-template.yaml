@@ -22,6 +22,10 @@ objects:
             value: ${REMOTE_SERVERS_LIST}
           - name: TEST_PLAN_URL
             value: ${TEST_PLAN_URL}
+          - name: APPLICATION_NAME
+            value: ${APPLICATION_NAME}
+          - name: JENKINS_PIPELINE_RETURN_URL
+            value: ${JENKINS_PIPELINE_RETURN_URL}
           image: docker-registry.default.svc:5000/jmeter-v2/jmeter-controller
           name: jmeter-controller-job
         restartPolicy: Never

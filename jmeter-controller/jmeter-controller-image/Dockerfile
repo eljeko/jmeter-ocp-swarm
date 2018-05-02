@@ -2,7 +2,7 @@ FROM registry.access.redhat.com/redhat-openjdk-18/openjdk18-openshift
 
 # Jmeter Controller image for OpenShift
 #
-# This image provides a Jmeter Controlelr to run distributed tests.
+# This image provides a Jmeter Controller to run distributed tests.
 # Jmeter 4.0
 # OpenShift v3.
 
@@ -30,8 +30,8 @@ EXPOSE 60000
 COPY ./contrib/s2i/bin /usr/libexec/s2i
 
 USER root
-RUN mkdir /home/jmeter 
-ADD ./contrib/apache-jmeter-4.0 /home/jmeter    
+RUN mkdir /home/jmeter
+ADD ./contrib/apache-jmeter-4.0 /home/jmeter
 
 RUN ["/bin/bash", "-c", "chown -R 1001 /home/jmeter/ && \
                          chgrp -R 0 /home/jmeter/ && \
