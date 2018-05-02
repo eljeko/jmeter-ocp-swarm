@@ -57,6 +57,8 @@ parameters:
 - description: Jenkins Username for callback
   name: JENKINS_USER
   required: true
+  value:
 - description: Jenkins Password or token for callback
   name: JENKINS_PASS
   required: true
+  value:  
