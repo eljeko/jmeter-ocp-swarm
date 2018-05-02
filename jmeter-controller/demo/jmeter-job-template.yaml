@@ -42,3 +42,11 @@ parameters:
   name: TIMESTAMP
   required: true
   value:
+- description: Name of the application
+  name: APPLICATION_NAME
+  required: true
+  value:
+- description: Jenkins callback URL
+  name: JENKINS_PIPELINE_RETURN_URL
+  required: true
+  value:
