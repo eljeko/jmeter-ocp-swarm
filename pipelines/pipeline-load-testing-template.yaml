@@ -100,23 +100,22 @@ objects:
               // inputFile.toString() gives you the absolute path of the file to parse
               //
               // These threshold values can be whatever you like
-              performanceReport compareBuildPrevious: false,
+              performanceReport compareBuildPrevious: true,
                 configType: 'ART',
                 errorFailedThreshold: 0,
-                errorUnstableResponseTimeThreshold: '${APPLICATION_NAME}:10',
+                errorUnstableResponseTimeThreshold: 'Jmeter-${APPLICATION_NAME}:10',
                 errorUnstableThreshold: 0,
                 failBuildIfNoResultFile: true,
                 ignoreFailedBuild: false,
-                ignoreUnstableBuild: true,
-                modeOfThreshold: false,
+                ignoreUnstableBuild: false,
+                modeOfThreshold: true,
                 modePerformancePerTestCase: true,
                 modeThroughput: true,
-                nthBuildNumber: 0,
                 parsers: [[$class: 'JMeterParser', glob: inputFile.toString()]],
-                relativeFailedThresholdNegative: 0,
-                relativeFailedThresholdPositive: 0,
-                relativeUnstableThresholdNegative: 0,
-                relativeUnstableThresholdPositive: 0
+                relativeFailedThresholdNegative: 50,
+                relativeFailedThresholdPositive: 50,
+                relativeUnstableThresholdNegative: 40,
+                relativeUnstableThresholdPositive: 40
             }
 
             stage ("Collecting results") {

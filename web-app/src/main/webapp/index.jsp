@@ -7,6 +7,7 @@
          pageEncoding="UTF-8" %>
 
 <%
+    //Thread.sleep(200); // sleep 5 seconds
     Object counterObj = session.getAttribute("counter");
     int counter = 0;
     if (counterObj != null && counterObj instanceof Integer) {
