@@ -9,9 +9,9 @@ objects:
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: ${APPLICATION_NAME}-pipeline
+    name: jmeter-${APPLICATION_NAME}
     labels:
-      name: ${APPLICATION_NAME}-pipeline
+      name: jmeter-${APPLICATION_NAME}
   spec:
     strategy:
       type: JenkinsPipeline
@@ -79,9 +79,8 @@ objects:
               sh "env"
 
               //Currently commented because https://issues.jenkins-ci.org/browse/JENKINS-16225
-              //inputURL = env.BUILD_URL + "input/${APPLICATION_NAME}-pipeline/submit"
+              inputURL = env.BUILD_URL + "input/Jmeter-${APPLICATION_NAME}/submit"
 
-              inputURL = "https://jenkins-jmeter-v2.apps.ocp.accenture.nfv/job/jmeter-v2-cool-app-pipeline/1/input/cool-app-pipeline/submit"
               println "The inputURL: " + inputURL
 
               sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -p JENKINS_PIPELINE_RETURN_URL=${inputURL} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -o yaml --local=true|oc create -f -"
@@ -89,12 +88,35 @@ objects:
               // Block and wait for job to return with results file
               // The input ID is what creates the unique return URL for curling back
               print "Waiting for results from JMeter test job..."
-              def inputFile = input id: "${APPLICATION_NAME}-pipeline",
+              def inputFile = input id: "Jmeter-${APPLICATION_NAME}",
                 message: 'Waiting for JMeter results...',
                 parameters: [
-                  file(description: 'Performance Test Results',
-                  name: "${APPLICATION_NAME}")  // This must match the name param in runjob.sh
+                  file(description: 'Performance Test Results ${APPLICATION_NAME}',
+                  name: "Jmeter-${APPLICATION_NAME}")  // This must match the name param in runjob.sh
                   ]
+
+              // Running Performance Plugin with JMeter to show results
+              // The results JTL file is saved on the master Jenkins node,
+              // inputFile.toString() gives you the absolute path of the file to parse
+              //
+              // These threshold values can be whatever you like
+              performanceReport compareBuildPrevious: false,
+                configType: 'ART',
+                errorFailedThreshold: 0,
+                errorUnstableResponseTimeThreshold: '',
+                errorUnstableThreshold: 0,
+                failBuildIfNoResultFile: false,
+                ignoreFailedBuild: false,
+                ignoreUnstableBuild: true,
+                modeOfThreshold: false,
+                modePerformancePerTestCase: true,
+                modeThroughput: true,
+                nthBuildNumber: 0,
+                parsers: [[$class: 'JMeterParser', glob: inputFile.toString()]],
+                relativeFailedThresholdNegative: 0,
+                relativeFailedThresholdPositive: 0,
+                relativeUnstableThresholdNegative: 0,
+                relativeUnstableThresholdPositive: 0
             }
 
             stage ("Collecting results") {
@@ -124,7 +146,7 @@ objects:
 parameters:
 - description: Url of the jmeter jmx project
   name: JMX_FILE_URL
-  value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx
+  value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-heavy-jmeter.jmx
   required: true
 - description: The application name
   name: APPLICATION_NAME
