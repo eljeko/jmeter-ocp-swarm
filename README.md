@@ -78,22 +78,25 @@ Go to dir
 ```[PATH-TO]/jmeter-ocp-swarm/jmeter-controller/demo```
 
 In this folder you'll find two files:
-* cool-app-jmeter.jmx: is the test plan generated from Jmeter tools (http://jmeter.apache.org/usermanual/)
+* cool-app-jmeter.jmx: is the test plan generated from Jmeter tools
+* cool-app-heavy-jmeter.jmx: is the a more heavy test plan generated from Jmeter tools (http://jmeter.apache.org/usermanual/)
 * jmeter-job-tempalte.yaml: This is a template useful for create the runtime environment for testing.
 
-## Create the specific test configuration
-```oc create configmap jmeter-test --from-file=cool-app-jmeter.jmx```
+#JenkinsPipeline
+Use this command to install the jmeter pipeline:
+```oc process -f pipelines/pipeline-load-testing-template.yaml -v CONCURRENT_LAUNCHER=2  JENKINS_USER=demo-admin JENKINS_PWD_TOKEN=78907bd92279b73aee2b16b8ef7e8757 -o yaml |oc create -f -```
 
-TODO: change the static name jmeter-test to jmeter-test-${APPLICATION-NAME} in order to avoid concurrency conflicts.
+* CONCURRENT_LAUNCHER: How many test executor you need for testing the parallelism
+* JENKINS_USER: You need to pass a jenkins username
+* JENKINS_PWD_TOKEN: You need to pass a valid jenkins token for API Calls refer to (http://jmeter.apache.org/usermanual/)
 
-## Running jmeter controller as job
-Create a job yaml file from the template, the configurables parameters are:
+## The Pipeling Runs jmeter controller as job
+So you need to pass parameters:
 
-* TEST_PLAN_URL the url of the jmx where the jmeter test is stored
-* REMOTE_SERVERS_LIST the ips of the pods running as jmeter remote servers
-* TIMESTAMP user generated timestamp to create unique jobs
+* JMX_FILE_URL: the url of the jmx where the jmeter test is stored (also a github raw content)
+* APPLICATION_NAME: the application name
 
-Before processing the template we get the ip of remote jmeter server running
+Thepipeline will get the ips of remote jmeter server running
 
 ```oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print $2'}| tr '\n' ','| sed 's/,$//'```
 
@@ -123,25 +126,6 @@ The output should be something like this:
 NAME                               READY     STATUS      RESTARTS   AGE
 jmeter-controller-job-1234-gznfw   0/1       Completed   0          1h
 ```
-
-You can simply grab the status with this command:
-
-```oc get pods -l job-name=jmeter-controller-job-1234  -o=custom-columns=STATUS:.status.containerStatuses[0].state.terminated.reason --no-headers=true```
-
-### Job from template
-
-oc process -f bash-job-template.yaml -p JOB_SUFFIX=aNewJob -o yaml --local=true
-
-## Create the pipeline
-
-```oc process -f pipeline-load-testing-template.yaml  -o yaml --local=true|oc create -f -```
-
-
-
-
-
-
-
 
 
 ------------------------------
