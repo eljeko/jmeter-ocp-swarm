@@ -102,9 +102,9 @@ objects:
               // These threshold values can be whatever you like
               performanceReport compareBuildPrevious: false,
                 configType: 'ART',
-                errorFailedThreshold: 0,
-                errorUnstableResponseTimeThreshold: '',
-                errorUnstableThreshold: 0,
+                errorFailedThreshold: 100,
+                errorUnstableResponseTimeThreshold: '1',
+                errorUnstableThreshold: 100,
                 failBuildIfNoResultFile: true,
                 ignoreFailedBuild: false,
                 ignoreUnstableBuild: true,
