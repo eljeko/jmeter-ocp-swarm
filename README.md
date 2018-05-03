@@ -90,13 +90,13 @@ Use this command to install the jmeter pipeline:
 * JENKINS_USER: You need to pass a jenkins username
 * JENKINS_PWD_TOKEN: You need to pass a valid jenkins token for API Calls refer to (http://jmeter.apache.org/usermanual/)
 
-## The Pipeling Runs jmeter controller as job
+## The Pipeline Runs jmeter controller as job
 So you need to pass parameters:
 
 * JMX_FILE_URL: the url of the jmx where the jmeter test is stored (also a github raw content)
 * APPLICATION_NAME: the application name
 
-Thepipeline will get the ips of remote jmeter server running
+The pipeline will get the ips of remote jmeter server running
 
 ```oc describe pods -l app=jmeter-server-remote|grep IP|awk '{print $2'}| tr '\n' ','| sed 's/,$//'```
 
@@ -127,7 +127,11 @@ NAME                               READY     STATUS      RESTARTS   AGE
 jmeter-controller-job-1234-gznfw   0/1       Completed   0          1h
 ```
 
-
+Improvements:
+* Remove the curl that retrieve the job controller template
+* Move the performanceReport into the Collecting results phase
+* Cleanup the Collecting results phase from grep
+* Remove the JMX_FILE_URL parameter and the relative curl and execute a git clone, and a find of all jmx files
 ------------------------------
 
 --docker-image registry.access.redhat.com/redhat-openjdk-18/openjdk18-openshift
