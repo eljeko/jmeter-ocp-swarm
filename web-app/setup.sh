@@ -1,6 +1,6 @@
 oc delete all -l app=cool-app
 
-./build-with-version.sh 1234
+oc new-build --image-stream=openshift/jboss-webserver31-tomcat8-openshift:1.1 --name=cool-app --binary=true
 
 oc start-build cool-app --from-file=./target/ROOT.war
 

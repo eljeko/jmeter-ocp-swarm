@@ -30,7 +30,7 @@ objects:
             value: ${JENKINS_USER}
           - name: JENKINS_PASS
             value: ${JENKINS_PASS}
-          image: docker-registry.default.svc:5000/jmeter-v2/jmeter-controller
+          image: ${IMAGE}
           name: jmeter-controller-job
         restartPolicy: Never
 parameters:
@@ -62,3 +62,6 @@ parameters:
   name: JENKINS_PASS
   required: true
   value:
+- description: JMeter image from specific cluster/project
+  name: IMAGE
+  required: true    
