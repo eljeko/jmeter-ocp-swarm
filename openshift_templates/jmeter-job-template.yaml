@@ -22,7 +22,15 @@ objects:
             value: ${REMOTE_SERVERS_LIST}
           - name: TEST_PLAN_URL
             value: ${TEST_PLAN_URL}
-          image: 172.30.1.1:5000/jmeter/jmeter-controller
+          - name: APPLICATION_NAME
+            value: ${APPLICATION_NAME}
+          - name: JENKINS_PIPELINE_RETURN_URL
+            value: ${JENKINS_PIPELINE_RETURN_URL}
+          - name: JENKINS_USER
+            value: ${JENKINS_USER}
+          - name: JENKINS_PASS
+            value: ${JENKINS_PASS}
+          image: ${IMAGE}
           name: jmeter-controller-job
         restartPolicy: Never
 parameters:
@@ -38,3 +46,22 @@ parameters:
   name: TIMESTAMP
   required: true
   value:
+- description: Name of the application
+  name: APPLICATION_NAME
+  required: true
+  value:
+- description: Jenkins callback URL
+  name: JENKINS_PIPELINE_RETURN_URL
+  required: true
+  value:
+- description: Jenkins Username for callback
+  name: JENKINS_USER
+  required: true
+  value:
+- description: Jenkins Password or token for callback
+  name: JENKINS_PASS
+  required: true
+  value:
+- description: JMeter image from specific cluster/project
+  name: IMAGE
+  required: true

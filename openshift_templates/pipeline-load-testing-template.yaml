@@ -19,7 +19,7 @@ objects:
         jenkinsfile: |-
           node ("maven") {
             def jmeter_slaves_ip //This will contains the jmeter slave IPs
-            def SLEEP=5 //Timeout wait
+            def SLEEP=3 //Timeout wait
             def inputFile //Jmeter test Feedback file
 
             jenkinsUser = "${JENKINS_USER}"    // Set username for Jenkins
@@ -41,14 +41,13 @@ objects:
                   script: "oc get pods -l app=${APPLICATION_NAME}-jmeter-slave  -o=custom-columns=Name:.metadata.name --no-headers=true || true",
                   returnStdout: true
                 ).split()
-
                 sleep SLEEP
-
-                println "The length of the array is: " + SLAVE_STATUSES.size()
-                println "The the array is: " + SLAVE_STATUSES
+                println "The actual number of Jmeter slave pods is: " + SLAVE_STATUSES.size()
+                println "Jmeter slave pods names: " + SLAVE_STATUSES
                 SLAVE_STATUSES.size() != 0
-
               }()) continue
+
+              println "No Jmeter slave nodes are running"
 
               sh "oc new-app --name=${APPLICATION_NAME}-jmeter-slave --image-stream=jmeter-server-remote"
               sh "oc scale dc/${APPLICATION_NAME}-jmeter-slave --replicas=${CONCURRENT_LAUNCHER}"
@@ -59,7 +58,6 @@ objects:
                   openshift.withProject(){
                   def latestDeploymentVersion = openshift.selector('dc',"${APPLICATION_NAME}-jmeter-slave").object().status.latestVersion
                   echo "latestVersion: " + latestDeploymentVersion
-                  //def rc = openshift.selector('rc').label([app:'${APPLICATION_NAME}-jmeter-slave'],"--overwrite")
                   def rc = openshift.selector('rc', "${APPLICATION_NAME}-jmeter-slave-${latestDeploymentVersion}")
                   echo "rc: " + rc
                   rc.untilEach(1){
@@ -69,6 +67,7 @@ objects:
                 }
               }
 
+              //Getting the IPs of the Jmeter Slave nodes
               jmeter_slaves_ip = sh (
                 script: "oc describe pods -l app=${APPLICATION_NAME}-jmeter-slave|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
                 returnStdout: true
@@ -79,7 +78,6 @@ objects:
             stage ("Executing Load test") {
 
               sh "curl ${JMETER_JOB_TEMPLATE_URL} > jmeter-job-template.yaml"
-
               // Get latest JMeter image from project to assign to job template
               String imageURL = sh (
                 script:"""
@@ -90,9 +88,7 @@ objects:
 
               //Currently commented because https://issues.jenkins-ci.org/browse/JENKINS-16225
               jenkins_callback_input_url = env.BUILD_URL + "input/Jmeter-${APPLICATION_NAME}/submit"
-
               println "The jenkins_callback_input_url: " + jenkins_callback_input_url
-
               sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=${JMETER_TEST_FILE_URL} -p REMOTE_SERVERS_LIST=${jmeter_slaves_ip} -p JENKINS_PIPELINE_RETURN_URL=${jenkins_callback_input_url} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -p IMAGE=${imageURL}:latest -o yaml --local=true|oc create -f -"
 
               // Block and wait for job to return with results file
