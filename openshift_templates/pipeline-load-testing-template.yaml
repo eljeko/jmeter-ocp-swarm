@@ -21,6 +21,7 @@ objects:
             def jmeter_slaves_ip //This will contains the jmeter slave IPs
             def SLEEP=3 //Timeout wait
             def inputFile //Jmeter test Feedback file
+            def parallelTestExecutorNodeNumber=${JMETER_SLAVE_NODES_NUMBER}
 
             jenkinsUser = "${JENKINS_USER}"    // Set username for Jenkins
             jenkinsPass = "${JENKINS_PWD_TOKEN}"    // Set API token for Jenkins
@@ -50,7 +51,7 @@ objects:
               println "No Jmeter slave nodes are running"
 
               sh "oc new-app --name=${APPLICATION_NAME}-jmeter-slave --image-stream=jmeter-server-remote"
-              sh "oc scale dc/${APPLICATION_NAME}-jmeter-slave --replicas=${CONCURRENT_LAUNCHER}"
+              sh "oc scale dc/${APPLICATION_NAME}-jmeter-slave --replicas=${parallelTestExecutorNodeNumber}"
 
 
               openshift.withCluster() {
@@ -144,7 +145,7 @@ parameters:
   value: cool-app
   required: true
 - description: Url of the jmeter jmx project
-  name: CONCURRENT_LAUNCHER
+  name: JMETER_SLAVE_NODES_NUMBER
   value: "2"
   required: true
 - description: Jenkins Username for callback
