@@ -18,20 +18,21 @@ objects:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
           node ("maven") {
-
-
-
-            def SERVERS_LIST_CALL
-            def SLEEP=5
-            def inputFile
+            def jmeter_slaves_ip //This will contains the jmeter slave IPs
+            def SLEEP=5 //Timeout wait
+            def inputFile //Jmeter test Feedback file
 
             jenkinsUser = "${JENKINS_USER}"    // Set username for Jenkins
             jenkinsPass = "${JENKINS_PWD_TOKEN}"    // Set API token for Jenkins
 
             stage ("Setup Envirornment") {
+              openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
+                echo "Hello from the project running Jenkins: ${openshift.project()}"
+              }
+
               env.TIME_STAMP = new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
 
-              //sh "oc delete all -l application=jmeter-controller-job-template"
+              sh "oc delete all -l application=jmeter-controller-job-template"
               sh "oc delete all -l job-name=jmeter-controller-job-$TIME_STAMP"
               sh "oc delete all -l app=${APPLICATION_NAME}-jmeter-slave"
 
@@ -52,32 +53,32 @@ objects:
               sh "oc new-app --name=${APPLICATION_NAME}-jmeter-slave --image-stream=jmeter-server-remote"
               sh "oc scale dc/${APPLICATION_NAME}-jmeter-slave --replicas=${CONCURRENT_LAUNCHER}"
 
-              while ({
-                SLAVE_STATUSES = sh (
-                  script: "oc get pods -l app=${APPLICATION_NAME}-jmeter-slave  -o=custom-columns=STATUS:.status.phase --no-headers=true || true",
-                  returnStdout: true
-                ).split()
 
-                sleep SLEEP
-                println "The length of the array is: " + SLAVE_STATUSES.size()
-                println "The the array is: " + SLAVE_STATUSES
+              openshift.withCluster() {
+                  //openshift.verbose()
+                  openshift.withProject(){
+                  def latestDeploymentVersion = openshift.selector('dc',"${APPLICATION_NAME}-jmeter-slave").object().status.latestVersion
+                  echo "latestVersion: " + latestDeploymentVersion
+                  //def rc = openshift.selector('rc').label([app:'${APPLICATION_NAME}-jmeter-slave'],"--overwrite")
+                  def rc = openshift.selector('rc', "${APPLICATION_NAME}-jmeter-slave-${latestDeploymentVersion}")
+                  echo "rc: " + rc
+                  rc.untilEach(1){
+                    def rcMap = it.object()
+                    return (rcMap.status.replicas.equals(rcMap.status.readyReplicas))
+                  }
+                }
+              }
 
-                SLAVE_STATUSES.count { it.startsWith('Running') } != ${CONCURRENT_LAUNCHER}
-
-              }()) continue
-
-              SERVERS_LIST_CALL = sh (
+              jmeter_slaves_ip = sh (
                 script: "oc describe pods -l app=${APPLICATION_NAME}-jmeter-slave|grep IP|awk '{print \$2'}| tr '\n' ','| sed 's/,\$//'",
                 returnStdout: true
               ).trim()
+              echo "Servers list: " + jmeter_slaves_ip
             }
 
             stage ("Executing Load test") {
 
               sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
-
-              env.SERVERS_LIST = SERVERS_LIST_CALL
-              env.JMX_FILE_URL = "${JMX_FILE_URL}"
 
               // Get latest JMeter image from project to assign to job template
               String imageURL = sh (
@@ -88,11 +89,11 @@ objects:
               )
 
               //Currently commented because https://issues.jenkins-ci.org/browse/JENKINS-16225
-              inputURL = env.BUILD_URL + "input/Jmeter-${APPLICATION_NAME}-${fileName}/submit"
+              jenkins_callback_input_url = env.BUILD_URL + "input/Jmeter-${APPLICATION_NAME}/submit"
 
-              println "The inputURL: " + inputURL
+              println "The jenkins_callback_input_url: " + jenkins_callback_input_url
 
-              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=$JMX_FILE_URL -p REMOTE_SERVERS_LIST=$SERVERS_LIST -p JENKINS_PIPELINE_RETURN_URL=${inputURL} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -p IMAGE=${imageURL}:latest -o yaml --local=true|oc create -f -"
+              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=${jmeter_test_file_url} -p REMOTE_SERVERS_LIST=${jmeter_slaves_ip} -p JENKINS_PIPELINE_RETURN_URL=${jenkins_callback_input_url} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -p IMAGE=${imageURL}:latest -o yaml --local=true|oc create -f -"
 
               // Block and wait for job to return with results file
               // The input ID is what creates the unique return URL for curling back
@@ -137,7 +138,7 @@ objects:
           }
 parameters:
 - description: Url of the jmeter jmx project
-  name: JMX_FILE_URL
+  name: jmeter_test_file_url
   value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx
   required: true
 - description: The application name

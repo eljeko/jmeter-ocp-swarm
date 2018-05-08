@@ -11,9 +11,8 @@ curl $TEST_PLAN_URL > /home/jmeter/test-jmeter.jmx
 sh /home/jmeter/bin/jmeter -n -t /home/jmeter/test-jmeter.jmx -l /home/jmeter/test-jmeter.jtl -Dserver.rmi.ssl.disable=true -R$JMETER_SLAVES
 
 #cat /home/jmeter/test-jmeter.jtl
-
-echo $JENKINS_PIPELINE_RETURN_URL
-echo $APPLICATION_NAME
+echo "Executing jmeter tests for application: " +$APPLICATION_NAME
+echo "Jenkins callback url: " +$JENKINS_PIPELINE_RETURN_URL
 
 curl -v -X POST --user $JENKINS_USER:$JENKINS_PASS \
   --form file0=@/home/jmeter/test-jmeter.jtl \
