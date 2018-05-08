@@ -78,7 +78,7 @@ objects:
 
             stage ("Executing Load test") {
 
-              sh "curl https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/jmeter-controller/demo/jmeter-job-template.yaml > jmeter-job-template.yaml"
+              sh "curl ${JMETER_JOB_TEMPLATE_URL} > jmeter-job-template.yaml"
 
               // Get latest JMeter image from project to assign to job template
               String imageURL = sh (
@@ -93,7 +93,7 @@ objects:
 
               println "The jenkins_callback_input_url: " + jenkins_callback_input_url
 
-              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=${jmeter_test_file_url} -p REMOTE_SERVERS_LIST=${jmeter_slaves_ip} -p JENKINS_PIPELINE_RETURN_URL=${jenkins_callback_input_url} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -p IMAGE=${imageURL}:latest -o yaml --local=true|oc create -f -"
+              sh "oc process -f jmeter-job-template.yaml -p TIMESTAMP=$TIME_STAMP -p TEST_PLAN_URL=${JMETER_TEST_FILE_URL} -p REMOTE_SERVERS_LIST=${jmeter_slaves_ip} -p JENKINS_PIPELINE_RETURN_URL=${jenkins_callback_input_url} -p APPLICATION_NAME=${APPLICATION_NAME} -p JENKINS_USER=${jenkinsUser} -p JENKINS_PASS=${jenkinsPass} -p IMAGE=${imageURL}:latest -o yaml --local=true|oc create -f -"
 
               // Block and wait for job to return with results file
               // The input ID is what creates the unique return URL for curling back
@@ -138,8 +138,10 @@ objects:
           }
 parameters:
 - description: Url of the jmeter jmx project
-  name: jmeter_test_file_url
-  value: https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx
+  name: JMETER_TEST_FILE_URL
+  required: true
+- description: Jenkins Password or token for callback
+  name: JMETER_JOB_TEMPLATE_URL
   required: true
 - description: The application name
   name: APPLICATION_NAME
