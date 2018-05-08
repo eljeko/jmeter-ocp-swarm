@@ -84,7 +84,7 @@ In this folder you'll find two files:
 
 #JenkinsPipeline
 Use this command to install the jmeter pipeline:
-```oc process -f pipelines/pipeline-load-testing-template.yaml -v CONCURRENT_LAUNCHER=2  JENKINS_USER=demo-admin JENKINS_PWD_TOKEN=78907bd92279b73aee2b16b8ef7e8757 -o yaml |oc create -f -```
+``` oc process -f openshift_templates/pipeline-load-testing-template.yaml -p CONCURRENT_LAUNCHER=2  -p JENKINS_USER=demo-admin -p JENKINS_PWD_TOKEN=28a8fc209210fc6f4174e0f2c5d502c6 -p JMETER_TEST_FILE_URL=https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/web-app/cool-app-jmeter.jmx  -p JMETER_JOB_TEMPLATE_URL=https://raw.githubusercontent.com/eljeko/jmeter-ocp-swarm/master/openshift_templates/jmeter-job-template.yaml -o yaml |oc create -f -```
 
 * CONCURRENT_LAUNCHER: How many test executor you need for testing the parallelism
 * JENKINS_USER: You need to pass a jenkins username
